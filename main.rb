@@ -370,6 +370,7 @@ class Account
   end
 
   def plus(number)
+
     @records << Record.new(@credit, number)
 
     @credit += number
@@ -378,6 +379,7 @@ class Account
   end
 
   def minus(number)
+
     raise "credit will be negative value. credit: #{@credit}, number: #{number}" if (@credit - number) < 0
 
     @records << Record.new(@credit, number)
@@ -407,7 +409,8 @@ class Player
   def initialize
     @bet_count = 0
     @win = @lose = 0
-    @draw_count = 10_000 # (12 hours * 60 minutes) / 2 minutes each = 360
+    @draw_count = 0
+    @draw_request_count = 10_000 # (12 hours * 60 minutes) / 2 minutes each = 360
     @initial_credit = 500
 
     @account = Account.new(@initial_credit)
@@ -415,7 +418,8 @@ class Player
   end
 
   def draw
-    @draw_count.times do |draw_count|
+    @draw_request_count.times do |draw_count|
+
       Logger.getLogger.debug("draw count: #{draw_count}")
 
       begin
@@ -432,27 +436,32 @@ class Player
 
       # draw
       result = @roulette.draw
+      @draw_count += 1
 
       Logger.getLogger.info(result)
 
       # skip reward calculation if no bet
       next unless bet.count.positive?
 
+      Logger.getLogger.debug("bet: #{bet.pretty_inspect}")
+
+
       @bet_count += 1
 
       reward = Reward.calculate(bet, result)
 
+      unless reward.positive?
+        next
+        @lose += 1
+      end
+
       Logger.getLogger.debug("reward: #{reward}")
 
       @account.plus(reward)
+      @win += 1
 
       Logger.getLogger.debug("account balance: #{@account.credit}")
 
-      if reward.positive?
-        @win += 1
-      else
-        @lose += 1
-      end
     end
 
     stats
@@ -467,7 +476,8 @@ class Player
     @account.records.each_with_index do |record, index|
       puts format('%4d', index) + ': ' + ('*' * (record.current_credit / 10)) + " #{record.current_credit}"
     end
-    puts "Draw: #{@draw_count}"
+    puts "Draw request: #{@draw_request_count}"
+    puts "Draw executed: #{@draw_count}"
     puts "Bet count: #{@bet_count}"
     puts "Bet ratio: #{(@bet_count.quo(@draw_count).to_f * 100).round(3)}%"
     puts "Credit: #{@account.credit}"
