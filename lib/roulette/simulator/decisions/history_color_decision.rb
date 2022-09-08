@@ -1,0 +1,46 @@
+module Roulette
+  module Simulator
+    module Decisions
+      class HistoryColorDecision
+        # 何回連続で出たらbetし始めるか
+        CONTINUOUS_COUNT = 6
+
+        def initialize(table = nil)
+          @table = table
+        end
+
+        # @params Bet
+        # @return Bet
+        def calculate(bet)
+          # skip to collect data
+          return bet if @table.histories.count < 10
+
+          last_color = @table.histories[-1].color
+
+          continuous = 0
+
+          index = 0
+          while index != @table.histories.count
+            index -= 1
+            next if @table.histories[index].color.nil? # 0を無視しないとbetが途中で止まってしまう
+
+            if @table.histories[index].color == last_color
+              continuous += 1
+            else
+              break
+            end
+          end
+
+          return bet if continuous < CONTINUOUS_COUNT
+
+          # マーチンゲール法
+          bet_price = 2**(continuous - CONTINUOUS_COUNT)
+
+          bet.color(Roulette::Simulator::Table.the_other_color(last_color), bet_price)
+
+          bet
+        end
+      end
+    end
+  end
+end

@@ -17,7 +17,6 @@ module Roulette
       end
 
       def minus(number, draw_count = nil)
-
         # raise "credit will be negative value. credit: #{@credit}, withdraw request: #{number}" if (@credit - number) < 0
 
         @records << Record.new(@credit, number, draw_count)

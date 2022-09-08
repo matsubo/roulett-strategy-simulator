@@ -1,12 +1,15 @@
-
 require 'debug' # for .pretty_inspect
 module Roulette
   module Simulator
     class Player
       def initialize
-        @bet_count = 0
-        @win = @lose = 0
-        @draw_count = 0
+        @stats = {
+          bet_count: 0,
+          win: 0,
+          lose: 0,
+          draw_count: 0
+        }
+
         @draw_request_count = 10_000 # (12 hours * 60 minutes) / 2 minutes each = 360
         @initial_credit = 500
 
@@ -22,7 +25,6 @@ module Roulette
           # bet
           bet_data = bet
 
-
           begin
             @account.minus(bet_data.sum, draw_count) if bet_data.sum.positive?
           rescue StandardError
@@ -35,7 +37,7 @@ module Roulette
           # draw
           result = @table.draw
 
-          @draw_count += 1
+          @stats[:draw_count] += 1
 
           Roulette::Simulator::SingletonLogger.instance.info(result)
 
@@ -44,19 +46,20 @@ module Roulette
 
           Roulette::Simulator::SingletonLogger.instance.debug("bet_data: #{bet_data.pretty_inspect}")
 
-          @bet_count += 1
+          @stats[:bet_count] += 1
 
           reward = Roulette::Simulator::Reward.calculate(bet_data, result)
 
           unless reward.positive?
-            @lose += 1
+            @stats[:lose] += 1
             next
           end
 
+          # return reward to the player
           Roulette::Simulator::SingletonLogger.instance.debug("reward: #{reward}")
 
           @account.plus(reward, draw_count)
-          @win += 1
+          @stats[:win] += 1
 
           Roulette::Simulator::SingletonLogger.instance.debug("account balance: #{@account.credit}")
         end
@@ -77,32 +80,29 @@ module Roulette
           puts format('%2d', k) + ': ' + ('*' * (v / 10)) + " #{v}"
         end
         puts 'Credit history'
-        @account.records.each_with_index do |record, index|
-
+        @account.records.each_with_index do |record, _index|
           # header
           print format('%4d', record.draw_count) + ': '
 
           # negative
           stars = record.current_credit.negative? ? record.current_credit.abs : 0
-          print sprintf('%100s', '*' * [(stars / 10), 100].min)
-          print "|"
+          print format('%100s', '*' * [(stars / 10), 100].min)
+          print '|'
 
           # positive
-          if record.current_credit.positive?
-            print ('*' * (record.current_credit / 10))
-          end
+          print('*' * (record.current_credit / 10)) if record.current_credit.positive?
           puts " #{record.current_credit}"
         end
         puts "Draw request: #{@draw_request_count}"
-        puts "Draw executed: #{@draw_count}"
-        puts "Bet count: #{@bet_count}"
-        puts "Bet ratio: #{(@bet_count.quo(@draw_count).to_f * 100).round(3)}%"
+        puts "Draw executed: #{@stats[:draw_count]}"
+        puts "Bet count: #{@stats[:bet_count]}"
+        puts "Bet ratio: #{(@stats[:bet_count].quo(@stats[:draw_count]).to_f * 100).round(3)}%"
         puts "Credit: #{@account.credit}"
         puts "Absolute Drawdown: #{(@account.min.quo(@account.credit).to_f * 100).round(3)}%"
         puts "PL(%): #{((@account.credit.quo(@initial_credit).to_f - 1) * 100).round(3)}%"
-        puts "Win: #{@win}"
-        puts "Lose: #{@lose}"
-        puts "Won(%): #{(@win.quo(@win + @lose).to_f * 100).round(3)} %"
+        puts "Win: #{@stats[:win]}"
+        puts "Lose: #{@stats[:lose]}"
+        puts "Won(%): #{(@stats[:win].quo(@stats[:win] + @stats[:lose]).to_f * 100).round(3)} %"
       end
     end
   end
