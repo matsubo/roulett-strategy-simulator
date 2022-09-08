@@ -71,28 +71,12 @@ module Roulette
         bet_data = Roulette::Simulator::BetData.new
         bet_data = Roulette::Simulator::Decisions::HistoryColorDecision.new(@table).calculate(bet_data)
         bet_data = Roulette::Simulator::Decisions::HistoryDozenDecision.new(@table).calculate(bet_data)
-        Roulette::Simulator::Decisions::HistoryLowHighDecision.new(@table).calculate(bet_data)
+        bet_data = Roulette::Simulator::Decisions::HistoryLowHighDecision.new(@table).calculate(bet_data)
+        bet_data
       end
 
       def stats
-        puts 'Result distribution:'
-        @table.histories.map(&:number).group_by(&:itself).map { |k, v| [k, v.size] }.to_h.sort.each do |k, v|
-          puts format('%2d', k) + ': ' + ('*' * (v / 10)) + " #{v}"
-        end
-        puts 'Credit history'
-        @account.records.each_with_index do |record, _index|
-          # header
-          print format('%4d', record.draw_count) + ': '
 
-          # negative
-          stars = record.current_credit.negative? ? record.current_credit.abs : 0
-          print format('%100s', '*' * [(stars / 10), 100].min)
-          print '|'
-
-          # positive
-          print('*' * (record.current_credit / 10)) if record.current_credit.positive?
-          puts " #{record.current_credit}"
-        end
         puts "Draw request: #{@draw_request_count}"
         puts "Draw executed: #{@stats[:draw_count]}"
         puts "Bet count: #{@stats[:bet_count]}"
@@ -103,7 +87,47 @@ module Roulette
         puts "Win: #{@stats[:win]}"
         puts "Lose: #{@stats[:lose]}"
         puts "Won(%): #{(@stats[:win].quo(@stats[:win] + @stats[:lose]).to_f * 100).round(3)} %"
+
+
+        # for gnuplot data
+        require 'gr/plot'
+
+        x = []
+        y = []
+        @account.records.each do |record|
+          x << record.draw_count
+          y << record.current_credit
+        end
+
+        GR.plot(x, y, GR.subplot(2, 1, 1))
+
+        # histogram
+        x = []
+        y = []
+        @table.histories.map(&:number).group_by(&:itself).map { |k, v| [k, v.size] }.to_h.sort.each do |k, v|
+            x << k
+            y << v
+        end
+
+        GR.barplot(x, y, GR.subplot(2, 1, 2))
+
+        debugger
+
+        GR.savefig('image.png')
+
       end
     end
   end
 end
+
+
+
+# require 'gr/plot'
+# 
+# x = [1,2,3,4,5,6,7,8,9,10]
+# y = x.shuffle
+
+# GR.barplot x, y, GR.subplot(2, 2, 1)
+# GR.stem    x, y, GR.subplot(2, 2, 2)
+# GR.step    x, y, GR.subplot(2, 2, 3)
+# GR.plot    x, y, GR.subplot(2, 2, 4)

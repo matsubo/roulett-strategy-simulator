@@ -1,11 +1,21 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    fiddle (1.1.0)
+    gr-plot (0.0.1)
+      ruby-gr
+    numo-narray (0.9.2.1)
+    pkg-config (1.4.9)
+    ruby-gr (0.66.0.0)
+      fiddle
+      numo-narray
+      pkg-config
 
 PLATFORMS
   arm64-darwin-21
 
 DEPENDENCIES
+  gr-plot (~> 0.0.1)
 
 BUNDLED WITH
    2.3.13
