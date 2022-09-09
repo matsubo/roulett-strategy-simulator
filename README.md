@@ -4,18 +4,17 @@
 ## setup
 
 ```
-% bundle install
+% docker-compose build
 ```
 
 
 ## Run
 
 ```
-% bundle exec ruby main.rb
+% docker-compose run app bundle exec ruby main.rb
 ```
 
 ## TODO
-- Add column bet logic
 - Add even/odd bet logic
 - Add area bet logic
 

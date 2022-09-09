@@ -1,0 +1,19 @@
+version: '3'
+services:
+  app:
+    build: .
+    volumes:
+      - .:/app
+    stdin_open: true
+    tty: true
+    tmpfs:
+      - /tmp
+    working_dir: '/app'
+    volumes:
+      - bundle:/usr/local/bundle
+      - .:/app
+    environment:
+      - TZ=Asia/Tokyo
+    command: 'bundle exec ruby main.rb'
+volumes:
+  bundle:
