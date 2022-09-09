@@ -1,7 +1,6 @@
 module Roulette
   module Simulator
     class Player
-
       attr_reader :stats
 
       def initialize(table, account, draw_request_count = 10_000)
@@ -26,11 +25,10 @@ module Roulette
           # bet
           bet_data = bet
 
-          begin
-            @account.minus(bet_data.sum, draw_count) if bet_data.sum.positive?
-          rescue StandardError
-            stats
-            raise
+          if bet_data.sum.positive?
+            @account.minus(bet_data.sum, draw_count)
+          else
+            @account.mark(draw_count)
           end
 
           Roulette::Simulator::SingletonLogger.instance.debug(bet) if bet.sum.positive?
@@ -60,12 +58,11 @@ module Roulette
           # return reward to the player
           Roulette::Simulator::SingletonLogger.instance.debug("reward: #{reward}")
 
-          @account.plus(reward, draw_count)
+          @account.plus(reward, draw_count + 0.5)
           @stats[:win] += 1
 
           Roulette::Simulator::SingletonLogger.instance.debug("account balance: #{@account.credit}")
         end
-
       end
 
       def bet
@@ -74,9 +71,7 @@ module Roulette
         bet_data = Roulette::Simulator::Decisions::HistoryDozenDecision.new(@table).calculate(bet_data)
         bet_data = Roulette::Simulator::Decisions::HistoryColumnDecision.new(@table).calculate(bet_data)
         bet_data = Roulette::Simulator::Decisions::HistoryLowHighDecision.new(@table).calculate(bet_data)
-        bet_data
       end
-
     end
   end
 end

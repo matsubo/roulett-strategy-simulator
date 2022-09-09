@@ -7,7 +7,7 @@ module Roulette
       include Singleton
 
       def initialize
-        super(STDOUT, level: Logger::WARN)
+        super(STDOUT, level: Logger::DEBUG)
       end
     end
   end

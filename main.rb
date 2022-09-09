@@ -15,19 +15,24 @@ require './lib/roulette/simulator/player'
 class PlaySuite
 
   def execute
-    
+
     draw_request_count = 360 # (12 hours * 60 minutes) / 2 minutes each = 360
-    days = 50
+    days = 30
     @initial_credit = 250
+
+
+    # seed = (ENV['seed'].to_i rescue nil) || Random.new_seed
+    # random = Random.new(seed)
+    # or
+    random = Random.new
+
 
     account_result = []
     days.times do |i|
       account = Roulette::Simulator::Account.new(@initial_credit)
-      play(account, draw_request_count)
+      play(account, draw_request_count, random)
       account_result << account.clone
     end
-
-
 
     # for gnuplot data
     Gnuplot.open do |gp|
@@ -63,12 +68,7 @@ class PlaySuite
     end
   end
 
-  def play(account, draw_request_count)
-
-    # seed = (ENV['seed'].to_i rescue nil) || Random.new_seed
-    # random = Random.new(seed)
-    # or
-    random = Random.new
+  def play(account, draw_request_count, random)
 
     table = Roulette::Simulator::Table.new(random)
 
@@ -86,7 +86,10 @@ class PlaySuite
     puts "PL(%): #{((account.credit.quo(@initial_credit).to_f - 1) * 100).round(3)}%"
     puts "Win: #{stats[:win]}"
     puts "Lose: #{stats[:lose]}"
-    puts "Won(%): #{(stats[:win].quo(stats[:win] + stats[:lose]).to_f * 100).round(3)} %"
+    if (stats[:win] + stats[:lose]).positive?
+      puts "Won(%): #{(stats[:win].quo(stats[:win] + stats[:lose]).to_f * 100).round(3)} %"
+    end
+    puts "Seed: #{random.seed}"
 
   end
 end

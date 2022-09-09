@@ -21,6 +21,8 @@ module Roulette
         @dozen = dozen
 
         @lowhigh = lowhigh
+
+        @column = column
       end
 
       def color
@@ -65,9 +67,9 @@ module Roulette
         return nil if @number.zero?
 
         first_columns = [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34]
-        return Roulette::Simulator::Table::DOZEN_1 if first_columns.include?(@number)
-        return Roulette::Simulator::Table::DOZEN_2 if first_columns.map { |n| n + 1 }.include?(@number)
-        return Roulette::Simulator::Table::DOZEN_3 if first_columns.map { |n| n + 2 }.include?(@number)
+        return Roulette::Simulator::Table::COLUMN_1 if first_columns.include?(@number)
+        return Roulette::Simulator::Table::COLUMN_2 if first_columns.map { |n| n + 1 }.include?(@number)
+        return Roulette::Simulator::Table::COLUMN_3 if first_columns.map { |n| n + 2 }.include?(@number)
 
         raise
       end

@@ -9,9 +9,9 @@ module Roulette
       end
 
       def plus(number, draw_count = nil)
-        @records << Record.new(@credit, number, draw_count)
+        @credit += number.abs
 
-        @credit += number
+        @records << Record.new(@credit, number, draw_count)
 
         calculate_statistics
       end
@@ -19,11 +19,17 @@ module Roulette
       def minus(number, draw_count = nil)
         # raise "credit will be negative value. credit: #{@credit}, withdraw request: #{number}" if (@credit - number) < 0
 
+        number = number.abs * -1
+
+        @credit += number
+
         @records << Record.new(@credit, number, draw_count)
 
-        @credit -= number
-
         calculate_statistics
+      end
+
+      def mark(draw_count = nil)
+        @records << Record.new(@credit, 0, draw_count)
       end
 
       # @see https://www.oanda.jp/lab-education/blog_30strategy/4345/

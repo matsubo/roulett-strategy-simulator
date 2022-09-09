@@ -7,17 +7,16 @@ module Roulette
       RED = 1
       BLACK = 2
 
-      DOZEN_1 = 1
-      DOZEN_2 = 2
-      DOZEN_3 = 3
+      DOZEN_1 = 11
+      DOZEN_2 = 12
+      DOZEN_3 = 13
 
+      COLUMN_1 = 21
+      COLUMN_2 = 22
+      COLUMN_3 = 23
 
-      COLUMN_1 = 1
-      COLUMN_2 = 2
-      COLUMN_3 = 3
-
-      LOW = 1
-      HIGH = 2
+      LOW = 31
+      HIGH = 32
 
       attr_reader :histories
 

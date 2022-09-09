@@ -1,43 +1,23 @@
 module Roulette
   module Simulator
     class Reward
-      def self.calculate(bet, result)
+      def self.calculate(bet_data, result)
         reward = 0
 
         # singles
-        reward += begin
-          bet.singles[result.number] * 36
-        rescue StandardError
-          0
-        end
+        reward += (bet_data.singles[result.number] || 0) * 36
 
         # colors
-        reward += begin
-          bet.colors[result.color] * 2
-        rescue StandardError
-          0
-        end
+        reward += (bet_data.colors[result.color] || 0) * 2
 
         # lowhighs
-        reward += begin
-          bet.lowhighs[result.lowhigh] * 2
-        rescue StandardError
-          0
-        end
+        reward += (bet_data.lowhighs[result.lowhigh] || 0) * 2
 
         # dozens
-        reward += begin
-          bet.dozens[result.dozen] * 3
-        rescue StandardError
-          0
-        end
+        reward +=  (bet_data.dozens[result.dozen] || 0) * 3
 
         # columns
-        reward += begin
-            bet.columns[result.column] * 3
-          rescue StandardError
-            0
-          end
+        reward += (bet_data.columns[result.column] || 0) * 3
 
         reward
       end
