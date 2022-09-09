@@ -1,21 +1,20 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    fiddle (1.1.0)
-    gr-plot (0.0.1)
-      ruby-gr
-    numo-narray (0.9.2.1)
-    pkg-config (1.4.9)
-    ruby-gr (0.66.0.0)
-      fiddle
-      numo-narray
-      pkg-config
+    gnuplot (2.6.2)
+    gnuplot-multiplot (0.0.1)
+      gnuplot (~> 2.6.2)
+    matrix (0.4.2)
 
 PLATFORMS
+  aarch64-linux
   arm64-darwin-21
+  x86_64-linux
 
 DEPENDENCIES
-  gr-plot (~> 0.0.1)
+  gnuplot
+  gnuplot-multiplot (~> 0.0.1)
+  matrix (~> 0.4.2)
 
 BUNDLED WITH
    2.3.13

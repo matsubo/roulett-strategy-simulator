@@ -2,6 +2,8 @@
 
 source 'https://rubygems.org'
 
-# gem "rails"
+gem "gnuplot"
 
-gem "gr-plot", "~> 0.0.1"
+gem "matrix", "~> 0.4.2"
+
+gem "gnuplot-multiplot", "~> 0.0.1"
