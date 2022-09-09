@@ -2,7 +2,7 @@ module Roulette
   module Simulator
     class Player
 
-        attr_reader :stats
+      attr_reader :stats
 
       def initialize(table, account, draw_request_count = 10_000)
         @stats = {

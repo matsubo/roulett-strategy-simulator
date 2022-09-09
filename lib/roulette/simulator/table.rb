@@ -21,14 +21,15 @@ module Roulette
 
       attr_reader :histories
 
-      def initialize
+      def initialize(random)
         @histories = []
         @draw_count = 0
+        @random = random
       end
 
       def draw
         @draw_count += 1
-        result = Result.new(@draw_count, rand(0..36))
+        result = Result.new(@draw_count, @random.rand(0..36))
         @histories << result
         result
       end

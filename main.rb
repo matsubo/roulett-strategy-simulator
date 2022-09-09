@@ -65,7 +65,12 @@ class PlaySuite
 
   def play(account, draw_request_count)
 
-    table = Roulette::Simulator::Table.new
+    # seed = (ENV['seed'].to_i rescue nil) || Random.new_seed
+    # random = Random.new(seed)
+    # or
+    random = Random.new
+
+    table = Roulette::Simulator::Table.new(random)
 
     player = Roulette::Simulator::Player.new(table, account, draw_request_count)
     player.draw
