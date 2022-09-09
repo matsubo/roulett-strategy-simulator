@@ -32,6 +32,13 @@ module Roulette
           0
         end
 
+        # columns
+        reward += begin
+            bet.columns[result.column] * 3
+          rescue StandardError
+            0
+          end
+
         reward
       end
     end

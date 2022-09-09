@@ -11,6 +11,11 @@ module Roulette
       DOZEN_2 = 2
       DOZEN_3 = 3
 
+
+      COLUMN_1 = 1
+      COLUMN_2 = 2
+      COLUMN_3 = 3
+
       LOW = 1
       HIGH = 2
 

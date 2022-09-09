@@ -1,20 +1,21 @@
-require 'debug' # for .pretty_inspect
 module Roulette
   module Simulator
     class Player
-      def initialize
+
+        attr_reader :stats
+
+      def initialize(table, account, draw_request_count = 10_000)
         @stats = {
           bet_count: 0,
           win: 0,
           lose: 0,
-          draw_count: 0
+          draw_count: 0,
+          max_bet: 0
         }
 
-        @draw_request_count = 10_000 # (12 hours * 60 minutes) / 2 minutes each = 360
-        @initial_credit = 500
-
-        @account = Roulette::Simulator::Account.new(@initial_credit)
-        @table = Roulette::Simulator::Table.new
+        @draw_request_count = draw_request_count
+        @account = account
+        @table = table
       end
 
       def draw
@@ -44,9 +45,10 @@ module Roulette
           # skip reward calculation if no bet
           next unless bet_data.sum.positive?
 
-          Roulette::Simulator::SingletonLogger.instance.debug("bet_data: #{bet_data.pretty_inspect}")
+          Roulette::Simulator::SingletonLogger.instance.debug("bet_data: #{bet_data}")
 
           @stats[:bet_count] += 1
+          @stats[:max_bet] = [@stats[:max_bet], bet_data.sum].max
 
           reward = Roulette::Simulator::Reward.calculate(bet_data, result)
 
@@ -64,70 +66,17 @@ module Roulette
           Roulette::Simulator::SingletonLogger.instance.debug("account balance: #{@account.credit}")
         end
 
-        stats
       end
 
       def bet
         bet_data = Roulette::Simulator::BetData.new
         bet_data = Roulette::Simulator::Decisions::HistoryColorDecision.new(@table).calculate(bet_data)
         bet_data = Roulette::Simulator::Decisions::HistoryDozenDecision.new(@table).calculate(bet_data)
+        bet_data = Roulette::Simulator::Decisions::HistoryColumnDecision.new(@table).calculate(bet_data)
         bet_data = Roulette::Simulator::Decisions::HistoryLowHighDecision.new(@table).calculate(bet_data)
         bet_data
       end
 
-      def stats
-
-        puts "Draw request: #{@draw_request_count}"
-        puts "Draw executed: #{@stats[:draw_count]}"
-        puts "Bet count: #{@stats[:bet_count]}"
-        puts "Bet ratio: #{(@stats[:bet_count].quo(@stats[:draw_count]).to_f * 100).round(3)}%"
-        puts "Credit: #{@account.credit}"
-        puts "Absolute Drawdown: #{(@account.min.quo(@account.credit).to_f * 100).round(3)}%"
-        puts "PL(%): #{((@account.credit.quo(@initial_credit).to_f - 1) * 100).round(3)}%"
-        puts "Win: #{@stats[:win]}"
-        puts "Lose: #{@stats[:lose]}"
-        puts "Won(%): #{(@stats[:win].quo(@stats[:win] + @stats[:lose]).to_f * 100).round(3)} %"
-
-
-        # for gnuplot data
-        require 'gr/plot'
-
-        x = []
-        y = []
-        @account.records.each do |record|
-          x << record.draw_count
-          y << record.current_credit
-        end
-
-        GR.plot(x, y, GR.subplot(2, 1, 1))
-
-        # histogram
-        x = []
-        y = []
-        @table.histories.map(&:number).group_by(&:itself).map { |k, v| [k, v.size] }.to_h.sort.each do |k, v|
-            x << k
-            y << v
-        end
-
-        GR.barplot(x, y, GR.subplot(2, 1, 2))
-
-        debugger
-
-        GR.savefig('image.png')
-
-      end
     end
   end
 end
-
-
-
-# require 'gr/plot'
-# 
-# x = [1,2,3,4,5,6,7,8,9,10]
-# y = x.shuffle
-
-# GR.barplot x, y, GR.subplot(2, 2, 1)
-# GR.stem    x, y, GR.subplot(2, 2, 2)
-# GR.step    x, y, GR.subplot(2, 2, 3)
-# GR.plot    x, y, GR.subplot(2, 2, 4)
