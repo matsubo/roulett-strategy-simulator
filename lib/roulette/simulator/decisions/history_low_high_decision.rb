@@ -47,7 +47,7 @@ module Roulette
 
           if last_lowhigh == Roulette::Simulator::Table::LOW
             bet.lowhigh(Roulette::Simulator::Table::HIGH, bet_price)
-          elsif last_lowhigh == Roulette::Simulator::Table::LOW
+          elsif last_lowhigh == Roulette::Simulator::Table::HIGH
             bet.lowhigh(Roulette::Simulator::Table::LOW, bet_price)
           end
 
