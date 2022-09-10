@@ -18,6 +18,9 @@ module Roulette
       LOW = 31
       HIGH = 32
 
+      EVEN = 41
+      ODD = 42
+
       attr_reader :histories
 
       def initialize(random)

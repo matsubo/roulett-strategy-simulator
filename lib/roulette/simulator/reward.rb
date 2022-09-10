@@ -13,6 +13,9 @@ module Roulette
         # lowhighs
         reward += (bet_data.lowhighs[result.lowhigh] || 0) * 2
 
+        # evenodd
+        reward += (bet_data.evenodds[result.evenodd] || 0) * 2
+
         # dozens
         reward +=  (bet_data.dozens[result.dozen] || 0) * 3
 

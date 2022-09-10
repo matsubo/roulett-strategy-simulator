@@ -23,6 +23,8 @@ module Roulette
         @lowhigh = lowhigh
 
         @column = column
+
+        @evenodd = evenodd
       end
 
       def color
@@ -39,6 +41,16 @@ module Roulette
           Roulette::Simulator::Table::LOW
         elsif 18 < @number
           Roulette::Simulator::Table::HIGH
+        end
+      end
+
+      def evenodd
+        return nil if @number.zero?
+
+        if @number % 2 == 0
+          Roulette::Simulator::Table::EVEN
+        elsif @number % 2 == 1
+          Roulette::Simulator::Table::ODD
         end
       end
 

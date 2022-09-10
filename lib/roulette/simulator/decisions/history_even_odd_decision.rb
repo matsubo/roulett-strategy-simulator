@@ -1,9 +1,10 @@
 module Roulette
   module Simulator
     module Decisions
-      class HistoryColorDecision
+      class HistoryEvenOddDecision
+
         # 何回連続で出たらbetし始めるか
-        CONTINUOUS_COUNT = 6
+        CONTINUOUS_COUNT = 6 # 0.9921875
 
         def initialize(table = nil)
           @table = table
@@ -15,25 +16,24 @@ module Roulette
           # skip to collect data
           return bet if @table.histories.count < 10
 
-          last_color = nil
+          last_evenodd = nil
 
           continuous = 0
 
           zero_count = 0
 
-          index = -1
-
+          index = 0
           while @table.histories[index]
-            
-            if @table.histories[index].color.nil? # 0を無視しないとbetが途中で止まってしまう
+
+            if @table.histories[index].evenodd.nil? # 0を無視しないとbetが途中で止まってしまう
               index -= 1
               zero_count += 1
               next
             end
 
-            last_color = last_color || @table.histories[index].color
+            last_evenodd = last_evenodd || @table.histories[index].lowhigh
 
-            if @table.histories[index].color == last_color
+            if @table.histories[index].evenodd == last_evenodd
               continuous += 1
               index -= 1
             else
@@ -43,11 +43,14 @@ module Roulette
 
           return bet if continuous < CONTINUOUS_COUNT
 
-
           # マーチンゲール法
           bet_price = 2**(continuous - CONTINUOUS_COUNT + zero_count)
 
-          bet.color(Roulette::Simulator::Table.the_other_color(last_color), bet_price)
+          if last_evenodd == Roulette::Simulator::Table::EVEN
+            bet.evenodd(Roulette::Simulator::Table::ODD, bet_price)
+          elsif last_evenodd == Roulette::Simulator::Table::ODD
+            bet.evenodd(Roulette::Simulator::Table::EVEN, bet_price)
+          end
 
           bet
         end
