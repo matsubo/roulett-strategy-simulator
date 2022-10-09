@@ -31,7 +31,7 @@ module Roulette
               next
             end
 
-            last_evenodd = last_evenodd || @table.histories[index].lowhigh
+            last_evenodd = last_evenodd || @table.histories[index].evenodd
 
             if @table.histories[index].evenodd == last_evenodd
               continuous += 1
