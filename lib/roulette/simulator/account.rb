@@ -17,7 +17,8 @@ module Roulette
       end
 
       def minus(number, draw_count = nil)
-        # raise "credit will be negative value. credit: #{@credit}, withdraw request: #{number}" if (@credit - number) < 0
+
+#        raise Roulette::Simulator::Exception::BalanceIsNotEnough.new("credit will be negative value. credit: #{@credit}, withdraw request: #{number}") if (@credit - number) < 0
 
         number = number.abs * -1
 

@@ -11,28 +11,40 @@ require './lib/roulette/simulator/decisions'
 require './lib/roulette/simulator/record'
 require './lib/roulette/simulator/account'
 require './lib/roulette/simulator/player'
+require './lib/roulette/simulator/exception/balacne_is_not_enough'
 
 class PlaySuite
+
+  def initialize
+    @stats = {
+      bankrupt: 0
+    }
+    @days = 365
+      @initial_credit = 250
+
+  end
 
   def execute
 
     draw_request_count = 360 # (12 hours * 60 minutes) / 2 minutes each = 360
-    days = 30
-    @initial_credit = 250
 
-
-    # seed = (ENV['seed'].to_i rescue nil) || Random.new_seed
-    # random = Random.new(seed)
-    # or
-    random = Random.new
+    random = Random.new(ENV.fetch('seed', rand(10000000)))
 
 
     account_result = []
-    days.times do |i|
+    @days.times do |i|
       account = Roulette::Simulator::Account.new(@initial_credit)
-      play(account, draw_request_count, random)
+      begin
+        play(account, draw_request_count, random)
+      rescue Roulette::Simulator::Exception::BalanceIsNotEnough => e
+        Roulette::Simulator::SingletonLogger.instance.debug(e.to_s)
+        @stats[:bankrupt] += 1
+        next
+      end
       account_result << account.clone
     end
+
+    showSuiteStats
 
     # for gnuplot data
     Gnuplot.open do |gp|
@@ -46,7 +58,7 @@ class PlaySuite
         Gnuplot::Plot.new(mp) do |plot|
           account_result.each do |account|
 
-            plot.title  "Credit balance (#{draw_request_count} draws x #{days} times)"
+            plot.title  "Credit balance (#{draw_request_count} draws x #{@days} times)"
             plot.xlabel 'Draw count'
             plot.ylabel 'Credit balance'
 
@@ -82,7 +94,7 @@ class PlaySuite
     puts "Bet count: #{stats[:bet_count]}"
     puts "Bet ratio: #{(stats[:bet_count].quo(stats[:draw_count]).to_f * 100).round(3)}%"
     puts "Credit: #{account.credit}"
-    puts "Absolute Drawdown: #{(account.min.quo(account.credit).to_f * 100).round(3)}%"
+    puts "Absolute Drawdown: #{(account.min.quo(account.credit).to_f * 100).round(3)}%" unless account.credit.zero?
     puts "PL(%): #{((account.credit.quo(@initial_credit).to_f - 1) * 100).round(3)}%"
     puts "Win: #{stats[:win]}"
     puts "Lose: #{stats[:lose]}"
@@ -91,6 +103,11 @@ class PlaySuite
     end
     puts "Seed: #{random.seed}"
 
+  end
+
+  def showSuiteStats
+    puts "Bankrupt: #{@stats[:bankrupt]}"
+    puts "Bankrupt rate: #{(@stats[:bankrupt].quo(@days).to_f * 100).round(3)}%"
   end
 end
 

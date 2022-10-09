@@ -46,8 +46,7 @@ module Roulette
           bet_price = 3**(continuous - CONTINUOUS_COUNT + zero_count)
 
           if last_column != Roulette::Simulator::Table::COLUMN_1
-            bet.column(Roulette::Simulator::Table::COLUMN_1,
-                       bet_price)
+            bet.column(Roulette::Simulator::Table::COLUMN_1, bet_price)
           end
           if last_column != Roulette::Simulator::Table::COLUMN_2
             bet.column(Roulette::Simulator::Table::COLUMN_2,

@@ -9,7 +9,7 @@ module Roulette
           win: 0,
           lose: 0,
           draw_count: 0,
-          max_bet: 0
+          max_bet: 0,
         }
 
         @draw_request_count = draw_request_count
@@ -67,11 +67,13 @@ module Roulette
 
       def bet
         bet_data = Roulette::Simulator::BetData.new
+
 #        bet_data = Roulette::Simulator::Decisions::HistoryColorDecision.new(@table).calculate(bet_data)
-        bet_data = Roulette::Simulator::Decisions::HistoryDozenDecision.new(@table).calculate(bet_data)
-        bet_data = Roulette::Simulator::Decisions::HistoryColumnDecision.new(@table).calculate(bet_data)
 #        bet_data = Roulette::Simulator::Decisions::HistoryLowHighDecision.new(@table).calculate(bet_data)
 #        bet_data = Roulette::Simulator::Decisions::HistoryEvenOddDecision.new(@table).calculate(bet_data)
+
+        bet_data = Roulette::Simulator::Decisions::HistoryDozenDecision.new(@table).calculate(bet_data)
+#        bet_data = Roulette::Simulator::Decisions::HistoryColumnDecision.new(@table).calculate(bet_data)
       end
     end
   end
