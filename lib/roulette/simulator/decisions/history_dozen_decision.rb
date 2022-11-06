@@ -3,7 +3,8 @@ module Roulette
     module Decisions
       class HistoryDozenDecision
         # 何回連続で出たらbetし始めるか
-        CONTINUOUS_COUNT = 4 # 0.99588477
+        # CONTINUOUS_COUNT = 4 # 0.99588477
+        CONTINUOUS_COUNT = 5 # 0.99588477
 
         def initialize(table = nil)
           @table = table

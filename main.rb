@@ -44,16 +44,14 @@ class PlaySuite
 
     # for gnuplot data
     Gnuplot.open do |gp|
-
       # memo: size 500,2500
       gp << 'set terminal png enhanced truecolor' << "\n"
+      gp << 'set terminal png size 2048,1536' << "\n"
       gp << 'set output "result.png"' << "\n"
 
       Gnuplot::Multiplot.new(gp, layout: [1, 1]) do |mp|
-
         Gnuplot::Plot.new(mp) do |plot|
           account_result.each do |account|
-
             plot.title  "Credit balance (#{draw_request_count} draws x #{@days} times)"
             plot.xlabel 'Draw count'
             plot.ylabel 'Credit balance'

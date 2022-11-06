@@ -68,12 +68,12 @@ module Roulette
       def bet
         bet_data = Roulette::Simulator::BetData.new
 
-#        bet_data = Roulette::Simulator::Decisions::HistoryColorDecision.new(@table).calculate(bet_data)
-#        bet_data = Roulette::Simulator::Decisions::HistoryLowHighDecision.new(@table).calculate(bet_data)
-#        bet_data = Roulette::Simulator::Decisions::HistoryEvenOddDecision.new(@table).calculate(bet_data)
+        bet_data = Roulette::Simulator::Decisions::HistoryColorDecision.new(@table).calculate(bet_data)
+        bet_data = Roulette::Simulator::Decisions::HistoryLowHighDecision.new(@table).calculate(bet_data)
+        bet_data = Roulette::Simulator::Decisions::HistoryEvenOddDecision.new(@table).calculate(bet_data)
 
         bet_data = Roulette::Simulator::Decisions::HistoryDozenDecision.new(@table).calculate(bet_data)
-#        bet_data = Roulette::Simulator::Decisions::HistoryColumnDecision.new(@table).calculate(bet_data)
+        bet_data = Roulette::Simulator::Decisions::HistoryColumnDecision.new(@table).calculate(bet_data)
       end
     end
   end
