@@ -47,9 +47,9 @@ module Roulette
       def evenodd
         return nil if @number.zero?
 
-        if @number % 2 == 0
+        if @number.even?
           Roulette::Simulator::Table::EVEN
-        elsif @number % 2 == 1
+        elsif @number.odd?
           Roulette::Simulator::Table::ODD
         end
       end
