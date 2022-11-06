@@ -17,7 +17,7 @@ module Roulette
         reward += (bet_data.evenodds[result.evenodd] || 0) * 2
 
         # dozens
-        reward +=  (bet_data.dozens[result.dozen] || 0) * 3
+        reward += (bet_data.dozens[result.dozen] || 0) * 3
 
         # columns
         reward += (bet_data.columns[result.column] || 0) * 3

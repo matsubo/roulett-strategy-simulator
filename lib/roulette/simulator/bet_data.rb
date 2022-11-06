@@ -31,6 +31,7 @@ module Roulette
       def lowhigh(lowhigh, bet)
         @lowhighs[lowhigh] = bet
       end
+
       def evenodd(evenodd, bet)
         @evenodds[evenodd] = bet
       end

@@ -2,7 +2,6 @@ module Roulette
   module Simulator
     module Decisions
       class HistoryEvenOddDecision
-
         # 何回連続で出たらbetし始めるか
         CONTINUOUS_COUNT = 6 # 0.9921875
 
@@ -31,14 +30,13 @@ module Roulette
               next
             end
 
-            last_evenodd = last_evenodd || @table.histories[index].evenodd
+            last_evenodd ||= @table.histories[index].evenodd
 
-            if @table.histories[index].evenodd == last_evenodd
-              continuous += 1
-              index -= 1
-            else
-              break
-            end
+            break unless @table.histories[index].evenodd == last_evenodd
+
+            continuous += 1
+            index -= 1
+
           end
 
           return bet if continuous < CONTINUOUS_COUNT

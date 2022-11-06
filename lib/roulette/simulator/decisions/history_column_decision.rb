@@ -30,14 +30,13 @@ module Roulette
               next
             end
 
-            last_column = last_column || @table.histories[index].column
+            last_column ||= @table.histories[index].column
 
-            if @table.histories[index].column == last_column
-              continuous += 1
-              index -= 1
-            else
-              break
-            end
+            break unless @table.histories[index].column == last_column
+
+            continuous += 1
+            index -= 1
+
           end
 
           return bet if continuous < CONTINUOUS_COUNT

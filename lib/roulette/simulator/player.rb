@@ -9,7 +9,7 @@ module Roulette
           win: 0,
           lose: 0,
           draw_count: 0,
-          max_bet: 0,
+          max_bet: 0
         }
 
         @draw_request_count = draw_request_count

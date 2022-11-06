@@ -30,14 +30,13 @@ module Roulette
               next
             end
 
-            last_lowhigh = last_lowhigh || @table.histories[index].lowhigh
+            last_lowhigh ||= @table.histories[index].lowhigh
 
-            if @table.histories[index].lowhigh == last_lowhigh
-              continuous += 1
-              index -= 1
-            else
-              break
-            end
+            break unless @table.histories[index].lowhigh == last_lowhigh
+
+            continuous += 1
+            index -= 1
+
           end
 
           return bet if continuous < CONTINUOUS_COUNT

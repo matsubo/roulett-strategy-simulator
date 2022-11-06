@@ -14,25 +14,21 @@ require './lib/roulette/simulator/player'
 require './lib/roulette/simulator/exception/balacne_is_not_enough'
 
 class PlaySuite
-
   def initialize
     @stats = {
       bankrupt: 0
     }
-    @days = 365
-      @initial_credit = 250
-
+    @days = 100
+    @initial_credit = 200
   end
 
   def execute
-
     draw_request_count = 360 # (12 hours * 60 minutes) / 2 minutes each = 360
 
-    random = Random.new(ENV.fetch('seed', rand(10000000)))
-
+    random = Random.new(ENV.fetch('seed', rand(10_000_000)))
 
     account_result = []
-    @days.times do |i|
+    @days.times do |_i|
       account = Roulette::Simulator::Account.new(@initial_credit)
       begin
         play(account, draw_request_count, random)
@@ -81,7 +77,6 @@ class PlaySuite
   end
 
   def play(account, draw_request_count, random)
-
     table = Roulette::Simulator::Table.new(random)
 
     player = Roulette::Simulator::Player.new(table, account, draw_request_count)
@@ -102,7 +97,6 @@ class PlaySuite
       puts "Won(%): #{(stats[:win].quo(stats[:win] + stats[:lose]).to_f * 100).round(3)} %"
     end
     puts "Seed: #{random.seed}"
-
   end
 
   def showSuiteStats

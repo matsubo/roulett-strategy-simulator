@@ -24,21 +24,20 @@ module Roulette
           index = -1
           while @table.histories[index]
 
-             # 0を無視しないとbetが途中で止まってしまう
+            # 0を無視しないとbetが途中で止まってしまう
             if @table.histories[index].dozen.nil?
-                index -= 1
-                zero_count += 1
-                next
-            end
-
-            last_dozen = last_dozen || @table.histories[index].dozen
-
-            if @table.histories[index].dozen == last_dozen
-              continuous += 1
               index -= 1
-            else
-              break
+              zero_count += 1
+              next
             end
+
+            last_dozen ||= @table.histories[index].dozen
+
+            break unless @table.histories[index].dozen == last_dozen
+
+            continuous += 1
+            index -= 1
+
           end
 
           return bet if continuous < CONTINUOUS_COUNT
@@ -46,15 +45,9 @@ module Roulette
           # マーチンゲール法
           bet_price = 3**(continuous - CONTINUOUS_COUNT + zero_count)
 
-          if last_dozen != Roulette::Simulator::Table::DOZEN_1
-            bet.dozen(Roulette::Simulator::Table::DOZEN_1, bet_price)
-          end
-          if last_dozen != Roulette::Simulator::Table::DOZEN_2
-            bet.dozen(Roulette::Simulator::Table::DOZEN_2, bet_price)
-          end
-          if last_dozen != Roulette::Simulator::Table::DOZEN_3
-            bet.dozen(Roulette::Simulator::Table::DOZEN_3, bet_price)
-          end
+          bet.dozen(Roulette::Simulator::Table::DOZEN_1, bet_price) if last_dozen != Roulette::Simulator::Table::DOZEN_1
+          bet.dozen(Roulette::Simulator::Table::DOZEN_2, bet_price) if last_dozen != Roulette::Simulator::Table::DOZEN_2
+          bet.dozen(Roulette::Simulator::Table::DOZEN_3, bet_price) if last_dozen != Roulette::Simulator::Table::DOZEN_3
 
           bet
         end

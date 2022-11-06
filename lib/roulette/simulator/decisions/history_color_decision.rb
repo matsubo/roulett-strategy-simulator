@@ -24,25 +24,23 @@ module Roulette
           index = -1
 
           while @table.histories[index]
-            
+
             if @table.histories[index].color.nil? # 0を無視しないとbetが途中で止まってしまう
               index -= 1
               zero_count += 1
               next
             end
 
-            last_color = last_color || @table.histories[index].color
+            last_color ||= @table.histories[index].color
 
-            if @table.histories[index].color == last_color
-              continuous += 1
-              index -= 1
-            else
-              break
-            end
+            break unless @table.histories[index].color == last_color
+
+            continuous += 1
+            index -= 1
+
           end
 
           return bet if continuous < CONTINUOUS_COUNT
-
 
           # マーチンゲール法
           bet_price = 2**(continuous - CONTINUOUS_COUNT + zero_count)
