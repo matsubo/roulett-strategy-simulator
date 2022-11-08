@@ -25,7 +25,7 @@ class PlaySuite
   def execute
     draw_request_count = 360 # (12 hours * 60 minutes) / 2 minutes each = 360
 
-    random = Random.new(ENV.fetch('seed', rand(10_000_000)))
+    random = Random.new(ENV.fetch('SEED', rand(10_000_000)).to_i)
 
     account_result = []
     @days.times do |_i|

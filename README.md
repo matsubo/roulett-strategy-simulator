@@ -66,6 +66,24 @@ Bankrupt rate: 16.0%　# 残高が0を下回る確率
 ```
 
 
+### 結果を固定したい場合
+
+パラメータを漬けずに実行するとランダムにルーレットが実行されます。デバッグをするときに実行結果を一定にしたい場合は `SEED` 環境変数に数字を渡せばシードを固定できます。
+シミュレーションを実行した後に出力されるシードの値を設定すれば前回と同じ実行結果になります。
+
+
+```
+% docker-compose run app bundle exec ruby main.rb
+
+```
+
+
+
+```
+% docker-compose run app bundle exec ruby main.rb
+```
+
+
 ## System Design
 
 ### 基本設計方針
