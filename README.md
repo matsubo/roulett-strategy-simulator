@@ -28,7 +28,7 @@ Webを探したところでは、このような目的を実現するプログ�
 ```
 % git clone git@github.com:matsubo/roulett-strategy-simulator.git
 % cd roulett-strategy-simulator
-% docker-compose build
+% docker compose build
 ```
 
 
@@ -37,7 +37,7 @@ Webを探したところでは、このような目的を実現するプログ�
 シミュレーションの実行
 
 ```
-% docker-compose run app bundle exec ruby main.rb
+% docker compose run app bundle exec ruby main.rb
 ```
 
 
