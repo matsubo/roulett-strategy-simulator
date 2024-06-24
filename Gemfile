@@ -4,9 +4,9 @@ source 'https://rubygems.org'
 
 gem 'gnuplot'
 
-gem 'matrix', '~> 0.4.2'
+gem 'matrix'
 
-gem 'gnuplot-multiplot', '~> 0.0.1'
+gem 'gnuplot-multiplot'
 
 group :test, :development do
   gem 'rubocop'
