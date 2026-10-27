@@ -49,25 +49,23 @@ class PlaySuite
       gp << 'set terminal png size 2048,1536' << "\n"
       gp << 'set output "result.png"' << "\n"
 
-      Gnuplot::Multiplot.new(gp, layout: [1, 1]) do |mp|
-        Gnuplot::Plot.new(mp) do |plot|
-          account_result.each do |account|
-            plot.title  "Credit balance (#{draw_request_count} draws x #{@days} times)"
-            plot.xlabel 'Draw count'
-            plot.ylabel 'Credit balance'
+      Gnuplot::Plot.new(gp) do |plot|
+        plot.title  "Credit balance (#{draw_request_count} draws x #{@days} times)"
+        plot.xlabel 'Draw count'
+        plot.ylabel 'Credit balance'
 
-            x = [0]
-            y = [@initial_credit]
+        account_result.each do |account|
+          x = [0]
+          y = [@initial_credit]
 
-            account.records.each do |record|
-              x << record.draw_count
-              y << record.current_credit
-            end
+          account.records.each do |record|
+            x << record.draw_count
+            y << record.current_credit
+          end
 
-            plot.data << Gnuplot::DataSet.new([x, y]) do |ds|
-              ds.with = 'linespoints'
-              ds.notitle
-            end
+          plot.data << Gnuplot::DataSet.new([x, y]) do |ds|
+            ds.with = 'linespoints'
+            ds.notitle
           end
         end
       end

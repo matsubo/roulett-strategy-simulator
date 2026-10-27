@@ -6,7 +6,7 @@ gem 'gnuplot'
 
 gem 'matrix'
 
-gem 'gnuplot-multiplot'
+gem 'logger'
 
 group :test, :development do
   gem 'rubocop'
