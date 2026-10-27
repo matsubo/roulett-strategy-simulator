@@ -12,6 +12,10 @@ Webを探したところでは、このような目的を実現するプログ�
 
 1日のプレイ回数を指定し、1日が終わったときの状態を評価する意図のプログラムになっています。標準では1日あたり360回プレイして、100日分のシミュレーションを行います。実行結果はグラフ付きのHTMLレポート `report.html` として出力されます。
 
+![レポートの概要（主要指標と資金の推移）](docs/images/report-overview.jpg)
+
+上の画像は `SEED=12345` で実行したときのレポートです。このレポートのHTMLは [v2.0.0 のリリース](https://github.com/matsubo/roulett-strategy-simulator/releases/tag/v2.0.0) からダウンロードできます。
+
 ## 要件
 
 - Docker
@@ -51,6 +55,24 @@ Report written to report.html (seed 12345)
 - 外側ベットごとの成績（賭けた回数、勝率、賭け金、払い戻し、払い戻し率、最大賭け金）
 - 日ごとの最大ドローダウンと最終資金の散布図
 - 日ごとの台帳
+
+### スクリーンショット
+
+最終資金の分布と、破産せずにプレイを続けている日の割合
+
+![最終資金の分布と生存率](docs/images/report-distribution.jpg)
+
+外側ベットごとの成績
+
+![ベットごとの成績](docs/images/report-bets.jpg)
+
+日ごとの最大ドローダウンと最終資金
+
+![最大ドローダウンと最終資金の散布図](docs/images/report-risk.jpg)
+
+日ごとの台帳
+
+![日ごとの台帳](docs/images/report-ledger.jpg)
 
 ### 結果を固定したい場合
 

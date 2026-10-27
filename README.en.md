@@ -12,6 +12,10 @@ The program is written in Ruby. It is Dockerized, so it can be easily used in an
 
 The program is intended to specify the number of plays per day and evaluate the state at the end of the day. By default it simulates 360 spins per day for 100 days. The results are written as an HTML report with charts to `report.html`.
 
+![Report overview: headline figures and bankroll through the day](docs/images/report-overview.jpg)
+
+The screenshot is the report for `SEED=12345`. That report's HTML can be downloaded from the [v2.0.0 release](https://github.com/matsubo/roulett-strategy-simulator/releases/tag/v2.0.0).
+
 ## Requirements
 
 - Docker
@@ -48,6 +52,24 @@ Open `report.html` in a browser (`open report.html` on macOS) for the charts and
 - Results per outside bet: wagers, win rate, staked, returned, return to player, max stake
 - Max drawdown against final bankroll for each day
 - A ledger of every day
+
+### Screenshots
+
+Final bankroll distribution and share of days still playing
+
+![Final bankroll distribution and survival](docs/images/report-distribution.jpg)
+
+Results per outside bet
+
+![Results per outside bet](docs/images/report-bets.jpg)
+
+Max drawdown against final bankroll per day
+
+![Max drawdown against final bankroll](docs/images/report-risk.jpg)
+
+Ledger of every day
+
+![Day ledger](docs/images/report-ledger.jpg)
 
 ### Fixing the result
 
