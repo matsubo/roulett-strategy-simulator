@@ -35,11 +35,6 @@ module Roulette
         @histories << result
         result
       end
-
-      def self.the_other_color(color)
-        return RED if color == BLACK
-        return BLACK if color == RED
-      end
     end
   end
 end

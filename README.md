@@ -8,14 +8,9 @@
 
 Webを探したところでは、このような目的を実現するプログラムやツールがなかったので作成してみました。
 
-プログラミング言語はRubyを利用し、グラフ化にはGnuplotを利用しています。DockerizedしてあるのでDockerを実行できる環境ですぐに利用可能です。
+プログラミング言語はRubyを利用しています。DockerizedしてあるのでDockerを実行できる環境ですぐに利用可能です。
 
-1日のプレイ回数を指定し、1日が終わったときの状態を評価する意図のプログラムになっています。プログラムの実行が完了すると以下のグラフが出力されます。横軸がプレイ回数、縦軸が資金量です。それぞれの線は1日分のプレイを意味しています。
-
-グラフでは1日あたり360回プレイして、100日分のシミュレーションを行った結果です。
-
-
-![result](https://user-images.githubusercontent.com/98103/200162790-ff4136e5-4267-4ecd-b087-c14df768bfed.png)
+1日のプレイ回数を指定し、1日が終わったときの状態を評価する意図のプログラムになっています。標準では1日あたり360回プレイして、100日分のシミュレーションを行います。実行結果はグラフ付きのHTMLレポート `report.html` として出力されます。
 
 ## 要件
 
@@ -41,48 +36,44 @@ Webを探したところでは、このような目的を実現するプログ�
 ```
 
 
-1日分の実行ごとに以下の統計情報が出力されます。
+実行が完了すると `report.html` が出力され、ターミナルにはそのパスとシード値が表示されます。
 
 ```
-Draw request: 360 # プレイ予定回数
-Draw executed: 360 # 実際にプレイした回数（途中で資金がなくなったらプレイできない）
-Max bet: 24 # 最大ベット数
-Bet count: 37 # 何回プレイに参加したか
-Bet ratio: 10.278% # 何回プレイに参加したか/プレイ回数
-Credit: 225 # 最終残高
-Absolute Drawdown: 77.778%　# 資金の最大落ち込み率
-PL(%): 12.5% # 資金の増減割合
-Win: 18 # ベット金額より賞金が上回ったプレイ
-Lose: 19 # ベット金額より賞金が下回ったプレイ
-Won(%): 48.649 % # 勝つ割合
-Seed: 9674385 # 乱数のシード値
+Report written to report.html (seed 12345)
 ```
 
+`report.html` をブラウザで開くと（macOSなら `open report.html`）、以下のグラフと表が確認できます（グラフの描画にChart.jsをCDNから読み込みます）。
 
-シミュレーション全体が完了したときに以下の統計情報が出力されます。
-```
-Bankrupt: 16 # 残高が0を下回る回数
-Bankrupt rate: 16.0%　# 残高が0を下回る確率
-```
-
+- 主要指標（破産率、利益の出た日の割合、最終資金の中央値、1日あたりの平均損益、払い戻し率、最大ドローダウン）
+- 資金の推移: 全日の5〜95パーセンタイル・25〜75パーセンタイルの帯と中央値。全日の推移線も切り替えて表示可能
+- 最終資金の分布
+- 破産せずにプレイを続けている日の割合の推移
+- 外側ベットごとの成績（賭けた回数、勝率、賭け金、払い戻し、払い戻し率、最大賭け金）
+- 日ごとの最大ドローダウンと最終資金の散布図
+- 日ごとの台帳
 
 ### 結果を固定したい場合
 
-パラメータを漬けずに実行するとランダムにルーレットが実行されます。デバッグをするときに実行結果を一定にしたい場合は `SEED` 環境変数に数字を渡せばシードを固定できます。
-シミュレーションを実行した後に出力されるシードの値を設定すれば前回と同じ実行結果になります。
-
-
-```
-% docker-compose run app bundle exec ruby main.rb
+パラメータを付けずに実行するとランダムにルーレットが実行されます。実行結果を一定にしたい場合は `SEED` 環境変数に数字を渡せばシードを固定できます。
+ターミナルやレポートに表示されるシードの値を設定すれば前回と同じ実行結果になります。
 
 ```
-
-
-
-```
-% docker-compose run app bundle exec ruby main.rb
+% docker compose run -e SEED=12345 app bundle exec ruby main.rb
 ```
 
+### スピンごとのログ
+
+`LOG_LEVEL=debug` を指定すると、スピンごとの出目・賭け金・資金が標準エラーに出力されます。
+
+```
+% docker compose run -e LOG_LEVEL=debug app bundle exec ruby main.rb
+```
+
+### テスト
+
+```
+% docker compose run --rm app bundle exec rake test
+```
 
 ## System Design
 
@@ -94,19 +85,27 @@ Bankrupt rate: 16.0%　# 残高が0を下回る確率
 
 ## クラスの説明
 
-- Roulette::Simulator::PlaySuite
+- PlaySuite（main.rb）
   - シミュレータの実行を管理
 - Roulette::Simulator::Account
   - 資金の口座
 - Roulette::Simulator::BetData
   - ベットする場所を管理
 - Roulette::Simulator::Player
-  - どこにいくら賭けるかというプレイを行う管理。どのような戦略を取るかはここで決める。
-- Roulette::Simulator::Record
-  - 過去に出た数字を記録
+  - 1日分のプレイを行い、結果を `DayOutcome` として返す。どのような戦略を取るかはここで決める。
+- Roulette::Simulator::DayOutcome
+  - 1日分の結果（スピンごとの資金、破産したスピン、ベットごとの集計）
+- Roulette::Simulator::Statistics
+  - 全日の結果から統計値（パーセンタイル、破産率、ドローダウンなど）を計算
+- Roulette::Simulator::Reports::Html
+  - 統計値をHTMLレポートとして出力
 - Roulette::Simulator::Reward
   - 掛けた場所に対していくら払い出すかを管理
 - Roulette::Simulator::Table
   - ルーレットのテーブルとその賭ける場所の名称を表現
+- Roulette::Simulator::OutsideBet
+  - 外側ベット（色、ロー/ハイ、偶数/奇数、ダズン、カラム）ごとに、どの数字がどのサイドか、配当がいくらかを表現
+- Roulette::Simulator::StreakStrategy
+  - 同じサイドが指定回数連続したら逆側に賭け、負けるたびに賭け金を（配当+1）倍にする戦略
 - Roulette::Simulator::Decisions::*
-  - 賭ける場所と金額を決める
+  - ランダムに賭ける場所と金額を決める（現在は未使用）

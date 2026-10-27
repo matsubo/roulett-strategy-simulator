@@ -1,79 +1,74 @@
 module Roulette
   module Simulator
+    # Plays one day at a table: places the strategies' wagers each spin and settles them.
     class Player
-      attr_reader :stats
+      STRATEGIES = [
+        StreakStrategy.new(OutsideBet::COLOR, trigger: 6),
+        StreakStrategy.new(OutsideBet::LOW_HIGH, trigger: 6),
+        StreakStrategy.new(OutsideBet::EVEN_ODD, trigger: 6),
+        StreakStrategy.new(OutsideBet::DOZEN, trigger: 5),
+        StreakStrategy.new(OutsideBet::COLUMN, trigger: 5)
+      ].freeze
 
-      def initialize(table, account, draw_request_count = 10_000)
-        @stats = {
-          bet_count: 0,
-          win: 0,
-          lose: 0,
-          draw_count: 0,
-          max_bet: 0
-        }
-
-        @draw_request_count = draw_request_count
-        @account = account
+      def initialize(table, account, spins)
         @table = table
+        @account = account
+        @spins = spins
       end
 
-      def draw
-        @draw_request_count.times do |draw_count|
-          Roulette::Simulator::SingletonLogger.instance.debug("draw count: #{draw_count}")
-          Roulette::Simulator::SingletonLogger.instance.debug("credit: #{@account.credit}")
+      # Plays up to the requested spins; the day ends early when the bankroll cannot cover a wager.
+      # @return [DayOutcome]
+      def play
+        @bankroll = [@account.credit]
+        @by_bet = {}
+        @total = BetTally.empty
 
-          # bet
-          bet_data = bet
-
-          if bet_data.sum.positive?
-            @account.minus(bet_data.sum, draw_count)
-          else
-            @account.mark(draw_count)
-          end
-
-          Roulette::Simulator::SingletonLogger.instance.debug(bet) if bet.sum.positive?
-
-          # draw
-          result = @table.draw
-
-          @stats[:draw_count] += 1
-
-          Roulette::Simulator::SingletonLogger.instance.info(result)
-
-          # skip reward calculation if no bet
-          next unless bet_data.sum.positive?
-
-          Roulette::Simulator::SingletonLogger.instance.debug("bet_data: #{bet_data}")
-
-          @stats[:bet_count] += 1
-          @stats[:max_bet] = [@stats[:max_bet], bet_data.sum].max
-
-          reward = Roulette::Simulator::Reward.calculate(bet_data, result)
-
-          unless reward.positive?
-            @stats[:lose] += 1
-            next
-          end
-
-          # return reward to the player
-          Roulette::Simulator::SingletonLogger.instance.debug("reward: #{reward}")
-
-          @account.plus(reward, draw_count + 0.5)
-          @stats[:win] += 1
-
-          Roulette::Simulator::SingletonLogger.instance.debug("account balance: #{@account.credit}")
+        bankrupt_at = nil
+        begin
+          @spins.times { play_spin }
+        rescue Exception::BalanceIsNotEnough => e
+          bankrupt_at = @bankroll.size
+          logger.debug("spin #{bankrupt_at}: bankrupt (#{e.message})")
         end
+
+        DayOutcome.new(bankroll: @bankroll, bankrupt_at: bankrupt_at, by_bet: @by_bet, total: @total)
       end
 
       def bet
         bet_data = Roulette::Simulator::BetData.new
+        spins = @table.histories.map(&:number)
 
-        bet_data = Roulette::Simulator::Decisions::HistoryColorDecision.new(@table).calculate(bet_data)
-        bet_data = Roulette::Simulator::Decisions::HistoryLowHighDecision.new(@table).calculate(bet_data)
-        bet_data = Roulette::Simulator::Decisions::HistoryEvenOddDecision.new(@table).calculate(bet_data)
+        STRATEGIES.each do |strategy|
+          strategy.wager(spins).each { |side, stake| bet_data.place(strategy.outside_bet, side, stake) }
+        end
 
-        bet_data = Roulette::Simulator::Decisions::HistoryDozenDecision.new(@table).calculate(bet_data)
-        bet_data = Roulette::Simulator::Decisions::HistoryColumnDecision.new(@table).calculate(bet_data)
+        bet_data
+      end
+
+      private
+
+      def play_spin
+        bet_data = bet
+        stake = bet_data.sum
+        @account.minus(stake)
+
+        result = @table.draw
+        settle(bet_data, result) if stake.positive?
+        @bankroll << @account.credit
+        logger.debug("spin #{@bankroll.size - 1}: #{result.number}, stake #{stake}, bankroll #{@account.credit}")
+      end
+
+      def settle(bet_data, result)
+        returned = Roulette::Simulator::Reward.by_bet(bet_data, result)
+        bet_data.stakes_by_bet.each do |bet, staked|
+          (@by_bet[bet] ||= BetTally.empty).add(staked, returned[bet]) if staked.positive?
+        end
+        @total.add(bet_data.sum, returned.values.sum)
+        @account.plus(returned.values.sum)
+      end
+
+      def logger
+        Roulette::Simulator::SingletonLogger.instance
       end
     end
   end

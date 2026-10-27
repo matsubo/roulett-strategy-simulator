@@ -1,28 +1,16 @@
 module Roulette
   module Simulator
     class Reward
-      def self.calculate(bet_data, result)
-        reward = 0
-
-        # singles
-        reward += (bet_data.singles[result.number] || 0) * 36
-
-        # colors
-        reward += (bet_data.colors[result.color] || 0) * 2
-
-        # lowhighs
-        reward += (bet_data.lowhighs[result.lowhigh] || 0) * 2
-
-        # evenodd
-        reward += (bet_data.evenodds[result.evenodd] || 0) * 2
-
-        # dozens
-        reward += (bet_data.dozens[result.dozen] || 0) * 3
-
-        # columns
-        reward += (bet_data.columns[result.column] || 0) * 3
-
-        reward
+      # @return [Hash{Symbol => Integer}] amount returned (stake included) per bet, keyed like BetData#stakes_by_bet
+      def self.by_bet(bet_data, result)
+        {
+          single: bet_data.singles[result.number] * 36,
+          color: bet_data.colors[result.color] * 2,
+          lowhigh: bet_data.lowhighs[result.lowhigh] * 2,
+          evenodd: bet_data.evenodds[result.evenodd] * 2,
+          dozen: bet_data.dozens[result.dozen] * 3,
+          column: bet_data.columns[result.column] * 3
+        }
       end
     end
   end

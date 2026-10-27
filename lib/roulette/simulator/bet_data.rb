@@ -20,24 +20,24 @@ module Roulette
         @colors[color] += bet
       end
 
-      def dozen(dozen, bet)
-        @dozens[dozen] = bet
+      # Adds a stake on one side of an outside bet.
+      def place(outside_bet, side, stake)
+        outside_stakes.fetch(outside_bet.name)[side] += stake
       end
 
-      def column(column, bet)
-        @columns[column] = bet
-      end
-
-      def lowhigh(lowhigh, bet)
-        @lowhighs[lowhigh] = bet
-      end
-
-      def evenodd(evenodd, bet)
-        @evenodds[evenodd] = bet
+      # @return [Hash{Symbol => Integer}] total stake per bet, keyed like Reward.by_bet
+      def stakes_by_bet
+        { single: @singles.values.sum }.merge(outside_stakes.transform_values { |stakes| stakes.values.sum })
       end
 
       def sum
-        @singles.values.sum + @colors.values.sum + @dozens.values.sum + @columns.values.sum + @lowhighs.values.sum + @evenodds.values.sum
+        stakes_by_bet.values.sum
+      end
+
+      private
+
+      def outside_stakes
+        { color: @colors, lowhigh: @lowhighs, evenodd: @evenodds, dozen: @dozens, column: @columns }
       end
     end
   end

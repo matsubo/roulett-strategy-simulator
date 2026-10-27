@@ -1,44 +1,23 @@
 module Roulette
   module Simulator
     class Account
-      attr_reader :credit, :records, :min, :max
+      attr_reader :credit
 
       def initialize(credit)
-        @credit = @min = @max = credit
-        @records = []
+        @credit = credit
       end
 
-      def plus(number, draw_count = nil)
+      def plus(number)
         @credit += number.abs
-
-        @records << Record.new(@credit, number, draw_count)
-
-        calculate_statistics
       end
 
-      def minus(number, draw_count = nil)
-        if (@credit - number) < 0
+      def minus(number)
+        if (@credit - number).negative?
           raise Roulette::Simulator::Exception::BalanceIsNotEnough,
                 "credit will be negative value. credit: #{@credit}, withdraw request: #{number}"
         end
 
-        number = number.abs * -1
-
-        @credit += number
-
-        @records << Record.new(@credit, number, draw_count)
-
-        calculate_statistics
-      end
-
-      def mark(draw_count = nil)
-        @records << Record.new(@credit, 0, draw_count)
-      end
-
-      # @see https://www.oanda.jp/lab-education/blog_30strategy/4345/
-      def calculate_statistics
-        @min = [@min, @credit].min
-        @max = [@max, @credit].max
+        @credit -= number.abs
       end
     end
   end

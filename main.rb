@@ -8,96 +8,34 @@ require './lib/roulette/simulator/table'
 require './lib/roulette/simulator/reward'
 require './lib/roulette/simulator/singleton_logger'
 require './lib/roulette/simulator/decisions'
-require './lib/roulette/simulator/record'
 require './lib/roulette/simulator/account'
+require './lib/roulette/simulator/outside_bet'
+require './lib/roulette/simulator/streak_strategy'
+require './lib/roulette/simulator/day_outcome'
 require './lib/roulette/simulator/player'
 require './lib/roulette/simulator/exception/balacne_is_not_enough'
+require './lib/roulette/simulator/statistics'
+require './lib/roulette/simulator/reports'
 
 class PlaySuite
-  def initialize
-    @stats = {
-      bankrupt: 0
-    }
-    @days = 100
-    @initial_credit = 200
-  end
+  DAYS = 100
+  SPINS_PER_DAY = 360 # (12 hours * 60 minutes) / 2 minutes each = 360
+  INITIAL_BANKROLL = 200
+  REPORT_PATH = 'report.html'.freeze
 
   def execute
-    draw_request_count = 360 # (12 hours * 60 minutes) / 2 minutes each = 360
+    seed = ENV.fetch('SEED', rand(10_000_000)).to_i
+    random = Random.new(seed)
 
-    random = Random.new(ENV.fetch('SEED', rand(10_000_000)).to_i)
-
-    account_result = []
-    @days.times do |_i|
-      account = Roulette::Simulator::Account.new(@initial_credit)
-      begin
-        play(account, draw_request_count, random)
-      rescue Roulette::Simulator::Exception::BalanceIsNotEnough => e
-        Roulette::Simulator::SingletonLogger.instance.debug(e.to_s)
-        @stats[:bankrupt] += 1
-        next
-      end
-      account_result << account.clone
+    outcomes = Array.new(DAYS) do
+      table = Roulette::Simulator::Table.new(random)
+      account = Roulette::Simulator::Account.new(INITIAL_BANKROLL)
+      Roulette::Simulator::Player.new(table, account, SPINS_PER_DAY).play
     end
 
-    showSuiteStats
-
-    # for gnuplot data
-    Gnuplot.open do |gp|
-      # memo: size 500,2500
-      gp << 'set terminal png enhanced truecolor' << "\n"
-      gp << 'set terminal png size 2048,1536' << "\n"
-      gp << 'set output "result.png"' << "\n"
-
-      Gnuplot::Plot.new(gp) do |plot|
-        plot.title  "Credit balance (#{draw_request_count} draws x #{@days} times)"
-        plot.xlabel 'Draw count'
-        plot.ylabel 'Credit balance'
-
-        account_result.each do |account|
-          x = [0]
-          y = [@initial_credit]
-
-          account.records.each do |record|
-            x << record.draw_count
-            y << record.current_credit
-          end
-
-          plot.data << Gnuplot::DataSet.new([x, y]) do |ds|
-            ds.with = 'linespoints'
-            ds.notitle
-          end
-        end
-      end
-    end
-  end
-
-  def play(account, draw_request_count, random)
-    table = Roulette::Simulator::Table.new(random)
-
-    player = Roulette::Simulator::Player.new(table, account, draw_request_count)
-    player.draw
-    stats = player.stats
-
-    puts "Draw request: #{draw_request_count}"
-    puts "Draw executed: #{stats[:draw_count]}"
-    puts "Max bet: #{stats[:max_bet]}"
-    puts "Bet count: #{stats[:bet_count]}"
-    puts "Bet ratio: #{(stats[:bet_count].quo(stats[:draw_count]).to_f * 100).round(3)}%"
-    puts "Credit: #{account.credit}"
-    puts "Absolute Drawdown: #{(account.min.quo(account.credit).to_f * 100).round(3)}%" unless account.credit.zero?
-    puts "PL(%): #{((account.credit.quo(@initial_credit).to_f - 1) * 100).round(3)}%"
-    puts "Win: #{stats[:win]}"
-    puts "Lose: #{stats[:lose]}"
-    if (stats[:win] + stats[:lose]).positive?
-      puts "Won(%): #{(stats[:win].quo(stats[:win] + stats[:lose]).to_f * 100).round(3)} %"
-    end
-    puts "Seed: #{random.seed}"
-  end
-
-  def showSuiteStats
-    puts "Bankrupt: #{@stats[:bankrupt]}"
-    puts "Bankrupt rate: #{(@stats[:bankrupt].quo(@days).to_f * 100).round(3)}%"
+    statistics = Roulette::Simulator::Statistics.new(outcomes, spins: SPINS_PER_DAY, initial_bankroll: INITIAL_BANKROLL)
+    Roulette::Simulator::Reports::Html.new(statistics, seed: seed).write(REPORT_PATH)
+    puts "Report written to #{REPORT_PATH} (seed #{seed})"
   end
 end
 

@@ -8,13 +8,9 @@ When playing roulette, the amount and location of your bets are important. This 
 
 I couldn't find any existing programs or tools that achieve this purpose, so I decided to create one myself.
 
-The program is written in Ruby and uses Gnuplot for graphing. It is Dockerized, so it can be easily used in an environment that can run Docker.
+The program is written in Ruby. It is Dockerized, so it can be easily used in an environment that can run Docker.
 
-The program is intended to specify the number of plays per day and evaluate the state at the end of the day. After the program finishes executing, the following graph is outputted. The x-axis represents the number of plays, and the y-axis represents the amount of funds. Each line represents one day of play.
-
-The graph shows the results of simulating 360 plays per day for 100 days.
-
-![result](https://user-images.githubusercontent.com/98103/200162790-ff4136e5-4267-4ecd-b087-c14df768bfed.png)
+The program is intended to specify the number of plays per day and evaluate the state at the end of the day. By default it simulates 360 spins per day for 100 days. The results are written as an HTML report with charts to `report.html`.
 
 ## Requirements
 
@@ -37,28 +33,42 @@ Executing the simulation
 % docker compose run app bundle exec ruby main.rb
 ```
 
-The following statistics are outputted for each day of execution:
+When the run finishes it writes `report.html` and prints its path and the seed:
 
 ```
-Draw request: 360 # Number of planned plays
-Draw executed: 360 # Number of plays actually executed (cannot play if funds run out)
-Max bet: 24 # Maximum bet amount
-Bet count: 37 # Number of times participated in play
-Bet ratio: 10.278% # Number of times participated in play / Number of plays
-Credit: 225 # Final balance
-Absolute Drawdown: 77.778% # Maximum drawdown rate of funds
-PL(%): 12.5% # Percentage change in funds
-Win: 18 # Plays where winnings exceeded the bet amount
-Lose: 19 # Plays where winnings were lower than the bet amount
-Won(%): 48.649% # Win rate
-Seed: 9674385 # Seed value of random number
+Report written to report.html (seed 12345)
 ```
 
-The following statistics are outputted when the entire simulation is completed:
+Open `report.html` in a browser (`open report.html` on macOS) for the charts and tables (Chart.js is loaded from a CDN):
+
+- Headline figures: bankrupt rate, profitable days, median final bankroll, mean daily profit, return to player, max drawdown
+- Bankroll through the day: 5th–95th and 25th–75th percentile bands with the median; every day's path can be toggled on
+- Distribution of final bankrolls
+- Share of days still playing (not bankrupt) at each spin
+- Results per outside bet: wagers, win rate, staked, returned, return to player, max stake
+- Max drawdown against final bankroll for each day
+- A ledger of every day
+
+### Fixing the result
+
+Without parameters the wheel is random. Pass a number in the `SEED` environment variable to fix it; the seed printed after the run and shown in the report reproduces that run.
 
 ```
-Bankrupt: 16 # Number of times balance went below 0
-Bankrupt rate: 16.0% # Probability of balance going below 0
+% docker compose run -e SEED=12345 app bundle exec ruby main.rb
+```
+
+### Per-spin log
+
+Set `LOG_LEVEL=debug` to print each spin's number, stake and bankroll to standard error.
+
+```
+% docker compose run -e LOG_LEVEL=debug app bundle exec ruby main.rb
+```
+
+### Test
+
+```
+% docker compose run --rm app bundle exec rake test
 ```
 
 ## System Design
@@ -71,19 +81,27 @@ Bankrupt rate: 16.0% # Probability of balance going below 0
 
 ## Class Descriptions
 
-- Roulette::Simulator::PlaySuite
+- PlaySuite (main.rb)
   - Manages the execution of the simulator
 - Roulette::Simulator::Account
   - Manages the funds account
 - Roulette::Simulator::BetData
   - Manages the locations to bet on
 - Roulette::Simulator::Player
-  - Manages the plays, including where and how much to bet. The strategy to be used is determined here.
-- Roulette::Simulator::Record
-  - Records the numbers that have appeared in the past
+  - Plays one day and returns a `DayOutcome`. The strategy to be used is determined here.
+- Roulette::Simulator::DayOutcome
+  - The result of one day: bankroll after each spin, the spin that went bankrupt, and tallies per bet
+- Roulette::Simulator::Statistics
+  - Figures over all days: percentiles, bankrupt rate, drawdowns and more
+- Roulette::Simulator::Reports::Html
+  - Renders the statistics as the HTML report
 - Roulette::Simulator::Reward
   - Manages how much to pay out for each bet location
 - Roulette::Simulator::Table
   - Represents the roulette table and the names of the locations to bet on
+- Roulette::Simulator::OutsideBet
+  - Represents each outside bet (color, low/high, even/odd, dozen, column): which numbers land on which side, and its payout
+- Roulette::Simulator::StreakStrategy
+  - Once one side comes up a set number of times in a row, bets against it and multiplies the stake by (payout + 1) after every lost bet
 - Roulette::Simulator::Decisions::*
-  - Determines the locations and amounts to bet on
+  - Decides random locations and amounts to bet on (currently unused)

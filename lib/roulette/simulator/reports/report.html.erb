@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Roulette strategy report · seed <%= h @seed %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400&family=Instrument+Sans:wght@400;500;600&family=Martian+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --felt: #0b2a21;
+      --felt-deep: #071c16;
+      --felt-light: #12392d;
+      --brass: #c9a24d;
+      --brass-soft: rgba(201, 162, 77, .18);
+      --ivory: #efe6d2;
+      --ivory-dim: rgba(239, 230, 210, .62);
+      --ivory-faint: rgba(239, 230, 210, .1);
+      --chip: #e0473a;
+      --mint: #6fd3a1;
+      --display: 'Bodoni Moda', 'Didot', serif;
+      --body: 'Instrument Sans', 'Helvetica Neue', sans-serif;
+      --mono: 'Martian Mono', 'SFMono-Regular', monospace;
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--felt-deep); }
+    body {
+      margin: 0;
+      color: var(--ivory);
+      font: 15px/1.55 var(--body);
+      background:
+        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(201, 162, 77, .12), transparent 60%),
+        radial-gradient(ellipse 120% 80% at 50% 40%, var(--felt-light), var(--felt) 55%, var(--felt-deep));
+      min-height: 100vh;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .35; mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+    }
+    main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 56px 32px 80px; }
+
+    .reveal { opacity: 0; transform: translateY(14px); animation: rise .7s cubic-bezier(.2, .7, .2, 1) forwards; }
+    @keyframes rise { to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .reveal { animation: none; opacity: 1; transform: none; } }
+
+    header.masthead { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: end; }
+    .eyebrow { font: 500 11px/1 var(--mono); letter-spacing: .28em; text-transform: uppercase; color: var(--brass); }
+    h1 { font: italic 400 clamp(44px, 6vw, 76px)/.95 var(--display); margin: 14px 0 0; letter-spacing: -.01em; }
+    h1 b { font-style: normal; font-weight: 600; color: var(--brass); }
+    .terms { font: 400 12px/1.9 var(--mono); color: var(--ivory-dim); text-align: right; }
+    .terms strong { color: var(--ivory); font-weight: 500; }
+    .rule { height: 1px; margin: 28px 0 36px; background: linear-gradient(90deg, transparent, var(--brass) 12%, var(--brass) 88%, transparent); position: relative; }
+    .rule::after { content: ''; position: absolute; left: 50%; top: -5px; width: 9px; height: 9px; background: var(--felt); border: 1px solid var(--brass); transform: translateX(-50%) rotate(45deg); }
+
+    .kpis { display: grid; grid-template-columns: repeat(6, 1fr); border: 1px solid var(--brass-soft); }
+    .kpi { padding: 20px 18px 18px; border-right: 1px solid var(--brass-soft); }
+    .kpi:last-child { border-right: 0; }
+    .kpi .label { font: 500 10.5px/1.2 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ivory-dim); min-height: 2.4em; }
+    .kpi .value { font: 400 34px/1.1 var(--display); margin: 10px 0 6px; font-variant-numeric: lining-nums; }
+    .kpi .note { font-size: 12px; color: var(--ivory-dim); }
+    .kpi.loss .value { color: var(--chip); }
+    .kpi.gain .value { color: var(--mint); }
+
+    section { margin-top: 56px; }
+    .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+    h2 { font: 400 30px/1.1 var(--display); margin: 0; }
+    h2 em { color: var(--brass); }
+    .caption { color: var(--ivory-dim); font-size: 13px; max-width: 58ch; }
+
+    .panel { background: linear-gradient(180deg, rgba(7, 28, 22, .55), rgba(7, 28, 22, .3)); border: 1px solid var(--ivory-faint); border-radius: 2px; padding: 22px 22px 16px; box-shadow: 0 30px 60px -40px rgba(0, 0, 0, .8); }
+    .panel h3 { font: 500 11px/1 var(--mono); letter-spacing: .2em; text-transform: uppercase; color: var(--brass); margin: 0 0 4px; }
+    .panel p.caption { margin: 0 0 14px; }
+    .chart { position: relative; height: 300px; }
+    .chart.tall { height: 430px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+    .grid-2.wide-right { grid-template-columns: 2fr 3fr; }
+    .scroll-x { overflow-x: auto; }
+
+    .toggle { font: 500 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ivory); background: transparent; border: 1px solid var(--brass); padding: 9px 14px; cursor: pointer; transition: background .2s, color .2s; }
+    .toggle[aria-pressed="true"], .toggle:hover { background: var(--brass); color: var(--felt-deep); }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 18px; font: 400 11px/1 var(--mono); color: var(--ivory-dim); margin-top: 12px; }
+    .legend i { display: inline-block; width: 18px; height: 8px; margin-right: 7px; vertical-align: middle; }
+
+    table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    th { font: 500 10.5px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ivory-dim); text-align: right; padding: 0 10px 12px; border-bottom: 1px solid var(--brass-soft); white-space: nowrap; }
+    th:first-child, td:first-child { text-align: left; }
+    td { font: 400 13px/1 var(--mono); text-align: right; padding: 11px 10px; border-bottom: 1px solid var(--ivory-faint); white-space: nowrap; }
+    tbody tr:hover td { background: rgba(201, 162, 77, .06); }
+    td.label { font: 500 14px/1 var(--body); }
+    .pos { color: var(--mint); }
+    .neg { color: var(--chip); }
+    .badge { font: 500 10px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; padding: 5px 8px; border: 1px solid currentColor; display: inline-block; }
+    .badge.bust { color: var(--chip); }
+    .badge.closed { color: var(--ivory-dim); }
+    .meter { display: inline-block; width: 120px; height: 6px; background: var(--ivory-faint); vertical-align: middle; margin-left: 10px; position: relative; }
+    .meter span { position: absolute; inset: 0 auto 0 0; background: var(--brass); }
+    .meter.under span { background: var(--chip); }
+    .meter::after { content: ''; position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--ivory-dim); left: var(--start); }
+    .ledger { max-height: 560px; overflow: auto; }
+    .ledger thead th { position: sticky; top: 0; background: var(--felt-deep); padding-top: 12px; }
+
+    footer { margin-top: 64px; font: 400 11px/1.8 var(--mono); color: var(--ivory-dim); display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+    footer code { color: var(--ivory); }
+
+    @media (max-width: 980px) {
+      .kpis { grid-template-columns: repeat(3, 1fr); }
+      .kpi:nth-child(3) { border-right: 0; }
+      .kpi:nth-child(-n+3) { border-bottom: 1px solid var(--brass-soft); }
+      .grid-2, .grid-2.wide-right { grid-template-columns: 1fr; }
+      header.masthead { grid-template-columns: 1fr; }
+      .terms { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header class="masthead reveal">
+    <div>
+      <div class="eyebrow">Roulette strategy simulator · European wheel</div>
+      <h1>The <b>house</b> ledger</h1>
+    </div>
+    <div class="terms">
+      <div><strong><%= @stats.days %></strong> days × <strong><%= @stats.spins %></strong> spins</div>
+      <div>starting bankroll <strong><%= Reports.amount(@stats.initial_bankroll) %></strong></div>
+      <div>seed <strong><%= h @seed %></strong></div>
+    </div>
+  </header>
+  <div class="rule reveal" style="animation-delay:.08s"></div>
+
+  <div class="kpis">
+    <%- kpis.each_with_index do |(label, value, note, tone), index| -%>
+    <div class="kpi reveal <%= tone %>" style="animation-delay:<%= format('%.2f', 0.12 + (index * 0.06)) %>s">
+      <div class="label"><%= h label %></div>
+      <div class="value"><%= h value %></div>
+      <div class="note"><%= h note %></div>
+    </div>
+    <%- end -%>
+  </div>
+
+  <section class="reveal" style="animation-delay:.5s">
+    <div class="section-head">
+      <div>
+        <h2>Bankroll <em>through the day</em></h2>
+        <p class="caption">Percentile bands across all days at every spin. A bankrupt day holds its last bankroll for the rest of the chart.</p>
+      </div>
+      <button class="toggle" id="toggle-paths" aria-pressed="false">Show every day</button>
+    </div>
+    <div class="panel">
+      <div class="chart tall"><canvas id="fan"></canvas></div>
+      <div class="legend">
+        <span><i style="background:rgba(201,162,77,.16)"></i>5th–95th percentile</span>
+        <span><i style="background:rgba(201,162,77,.36)"></i>25th–75th percentile</span>
+        <span><i style="background:var(--brass);height:3px"></i>Median</span>
+        <span><i style="border-top:1px dashed var(--ivory-dim);height:0"></i>Starting bankroll</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid-2 reveal" style="animation-delay:.6s">
+    <div class="panel">
+      <h3>Where the days closed</h3>
+      <p class="caption">Final bankroll per day. Red bins finished below the starting bankroll.</p>
+      <div class="chart"><canvas id="histogram"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3>Still at the table</h3>
+      <p class="caption">Share of days not yet bankrupt at each spin<%= ", median bankruptcy at spin #{Reports.amount(@stats.median_bankrupt_spin)}" if @stats.bankrupt_days.positive? %>.</p>
+      <div class="chart"><canvas id="survival"></canvas></div>
+    </div>
+  </section>
+
+  <section class="reveal" style="animation-delay:.7s">
+    <div class="section-head">
+      <div>
+        <h2>By <em>bet</em></h2>
+        <p class="caption">Each outside bet the strategy played, summed over every day. A wager wins when it returns more than its stake.</p>
+      </div>
+    </div>
+    <div class="grid-2 wide-right">
+      <div class="panel">
+        <h3>Net result</h3>
+        <div class="chart"><canvas id="bets"></canvas></div>
+      </div>
+      <div class="panel scroll-x">
+        <table>
+          <thead><tr><th>Bet</th><th>Wagers</th><th>Win rate</th><th>Staked</th><th>Returned</th><th>RTP</th><th>Max stake</th></tr></thead>
+          <tbody>
+          <%- bet_rows.each do |row| -%>
+            <tr>
+              <td class="label"><%= h row[:label] %></td>
+              <td><%= Reports.amount(row[:bets]) %></td>
+              <td><%= Reports.percent(row[:win_rate]) %></td>
+              <td><%= Reports.amount(row[:staked]) %></td>
+              <td><%= Reports.amount(row[:returned]) %></td>
+              <td class="<%= row[:net].negative? ? 'neg' : 'pos' %>"><%= Reports.percent(row[:rtp]) %></td>
+              <td><%= Reports.amount(row[:max_stake]) %></td>
+            </tr>
+          <%- end -%>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal" style="animation-delay:.8s">
+    <div class="section-head">
+      <div>
+        <h2>Risk <em>against</em> reward</h2>
+        <p class="caption">Each dot is one day: its deepest fall from a running peak against where it closed.</p>
+      </div>
+    </div>
+    <div class="panel"><div class="chart"><canvas id="scatter"></canvas></div></div>
+  </section>
+
+  <section class="reveal" style="animation-delay:.9s">
+    <div class="section-head">
+      <div>
+        <h2>Day <em>ledger</em></h2>
+        <p class="caption">Every day in order. The tick on each bar marks the starting bankroll.</p>
+      </div>
+    </div>
+    <div class="panel ledger">
+      <table>
+        <thead><tr><th>Day</th><th>Outcome</th><th>Final bankroll</th><th>P / L</th><th>Max drawdown</th><th>Spins</th><th>Wagers</th><th>Win rate</th><th>Max stake</th></tr></thead>
+        <tbody>
+        <%- top = [@stats.final_bankrolls.max, @stats.initial_bankroll].max.to_f -%>
+        <%- day_rows.each do |row| -%>
+          <tr>
+            <td><%= row[:day] %></td>
+            <td><%- if row[:bankrupt_at] -%><span class="badge bust">Bankrupt · spin <%= row[:bankrupt_at] %></span><%- else -%><span class="badge closed">Closed</span><%- end -%></td>
+            <td><%= Reports.amount(row[:final]) %><span class="meter<%= ' under' if row[:profit].negative? %>" style="--start:<%= format('%.1f', @stats.initial_bankroll / top * 100) %>%"><span style="width:<%= format('%.1f', row[:final] / top * 100) %>%"></span></span></td>
+            <td class="<%= row[:profit].negative? ? 'neg' : 'pos' %>"><%= Reports.signed_amount(row[:profit]) %></td>
+            <td><%= Reports.percent(row[:drawdown]) %></td>
+            <td><%= row[:spins_played] %></td>
+            <td><%= row[:wagers] %></td>
+            <td><%= Reports.percent(row[:win_rate]) %></td>
+            <td><%= Reports.amount(row[:max_stake]) %></td>
+          </tr>
+        <%- end -%>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <span>Generated <%= generated_at %></span>
+    <span>Reproduce: <code>docker compose run --rm -e SEED=<%= h @seed %> app</code></span>
+  </footer>
+</main>
+
+<script type="application/json" id="report-data"><%= chart_json %></script>
+<script>
+(() => {
+  if (!window.Chart) return;
+  const data = JSON.parse(document.getElementById('report-data').textContent);
+  const css = getComputedStyle(document.documentElement);
+  const v = (name) => css.getPropertyValue(name).trim();
+  const BRASS = v('--brass'), IVORY = v('--ivory'), DIM = v('--ivory-dim'), CHIP = v('--chip'), MINT = v('--mint');
+  const GRID = 'rgba(239,230,210,.07)';
+  const fmt = (n) => Number(n).toLocaleString('en-US', { maximumFractionDigits: 1 });
+
+  Chart.defaults.color = DIM;
+  Chart.defaults.font.family = "'Martian Mono', monospace";
+  Chart.defaults.font.size = 10.5;
+  Chart.defaults.borderColor = GRID;
+  Chart.defaults.maintainAspectRatio = false;
+  Chart.defaults.plugins.legend.display = false;
+  Object.assign(Chart.defaults.plugins.tooltip, {
+    backgroundColor: 'rgba(7,28,22,.95)', borderColor: BRASS, borderWidth: 1, titleColor: BRASS,
+    bodyColor: IVORY, padding: 10, cornerRadius: 0, displayColors: false,
+  });
+
+  const spins = Array.from({ length: data.spins + 1 }, (_, i) => i);
+  const spinAxis = { type: 'linear', min: 0, max: data.spins, title: { display: true, text: 'Spin' }, grid: { display: false } };
+  const flat = (values) => values.map((y, x) => ({ x, y }));
+
+  // Fan chart
+  const band = (key, fill, color) => ({
+    label: key, data: flat(data.bands[key]), borderWidth: 0, pointRadius: 0, fill, backgroundColor: color, order: 3,
+  });
+  const dayPaths = data.days.map((day) => ({
+    label: `Day ${day.day}`, data: flat(day.path), borderWidth: 1, pointRadius: 0, hidden: true, order: 4,
+    borderColor: day.bankrupt_at ? 'rgba(224,71,58,.28)' : 'rgba(239,230,210,.13)', isPath: true,
+  }));
+  const fan = new Chart(document.getElementById('fan'), {
+    type: 'line',
+    data: {
+      labels: spins,
+      datasets: [
+        band('p95', false, 'transparent'),
+        band('p5', '-1', 'rgba(201,162,77,.16)'),
+        band('p75', false, 'transparent'),
+        band('p25', '-1', 'rgba(201,162,77,.30)'),
+        { label: 'Median', data: flat(data.bands.p50), borderColor: BRASS, borderWidth: 2.5, pointRadius: 0, order: 1 },
+        { label: 'Start', data: [{ x: 0, y: data.initial }, { x: data.spins, y: data.initial }], borderColor: DIM,
+          borderDash: [4, 5], borderWidth: 1, pointRadius: 0, order: 2 },
+        ...dayPaths,
+      ],
+    },
+    options: {
+      animation: false, parsing: false, normalized: true,
+      interaction: { mode: 'index', intersect: false, axis: 'x' },
+      scales: { x: spinAxis, y: { title: { display: true, text: 'Bankroll' }, beginAtZero: true } },
+      plugins: {
+        tooltip: {
+          filter: (item) => ['p95', 'p75', 'Median', 'p25', 'p5'].includes(item.dataset.label),
+          itemSort: (a, b) => b.parsed.y - a.parsed.y,
+          callbacks: {
+            title: (items) => `Spin ${items[0].parsed.x}`,
+            label: (item) => `${item.dataset.label === 'Median' ? 'median' : item.dataset.label}  ${fmt(item.parsed.y)}`,
+          },
+        },
+      },
+    },
+  });
+  const toggle = document.getElementById('toggle-paths');
+  toggle.addEventListener('click', () => {
+    const show = toggle.getAttribute('aria-pressed') !== 'true';
+    toggle.setAttribute('aria-pressed', String(show));
+    toggle.textContent = show ? 'Hide days' : 'Show every day';
+    fan.data.datasets.forEach((ds) => { if (ds.isPath) ds.hidden = !show; });
+    fan.update('none');
+  });
+
+  // Histogram
+  new Chart(document.getElementById('histogram'), {
+    type: 'bar',
+    data: {
+      labels: data.histogram.map((bin) => `${fmt(bin.from)}–${fmt(bin.to - 1)}`),
+      datasets: [{
+        data: data.histogram.map((bin) => bin.count),
+        backgroundColor: data.histogram.map((bin) => (bin.to <= data.initial ? 'rgba(224,71,58,.75)' : 'rgba(201,162,77,.8)')),
+        borderWidth: 0, barPercentage: .92, categoryPercentage: 1,
+      }],
+    },
+    options: {
+      scales: {
+        x: { grid: { display: false }, title: { display: true, text: 'Final bankroll' }, ticks: { maxRotation: 0, autoSkipPadding: 12 } },
+        y: { title: { display: true, text: 'Days' }, ticks: { precision: 0 } },
+      },
+      plugins: { tooltip: { callbacks: { title: (items) => `Bankroll ${items[0].label}`, label: (item) => `${item.parsed.y} days` } } },
+    },
+  });
+
+  // Survival
+  new Chart(document.getElementById('survival'), {
+    type: 'line',
+    data: { datasets: [{
+      data: flat(data.survival), borderColor: MINT, borderWidth: 2, pointRadius: 0, stepped: true,
+      fill: 'origin', backgroundColor: 'rgba(111,211,161,.12)',
+    }] },
+    options: {
+      animation: false, parsing: false,
+      interaction: { mode: 'index', intersect: false, axis: 'x' },
+      scales: { x: spinAxis, y: { min: 0, max: 100, ticks: { callback: (value) => `${value}%` } } },
+      plugins: { tooltip: { callbacks: { title: (items) => `Spin ${items[0].parsed.x}`, label: (item) => `${item.parsed.y.toFixed(1)}% still playing` } } },
+    },
+  });
+
+  // Net by bet
+  new Chart(document.getElementById('bets'), {
+    type: 'bar',
+    data: {
+      labels: data.bets.map((bet) => bet.label),
+      datasets: [{
+        data: data.bets.map((bet) => bet.net),
+        backgroundColor: data.bets.map((bet) => (bet.net < 0 ? 'rgba(224,71,58,.8)' : 'rgba(111,211,161,.8)')),
+        borderWidth: 0, barPercentage: .6,
+      }],
+    },
+    options: {
+      indexAxis: 'y',
+      scales: {
+        x: { title: { display: true, text: 'Net (returned − staked)' } },
+        y: { grid: { display: false }, ticks: { color: IVORY, font: { family: "'Instrument Sans', sans-serif", size: 13 } } },
+      },
+      plugins: { tooltip: { callbacks: { label: (item) => `${item.parsed.x > 0 ? '+' : ''}${fmt(item.parsed.x)}` } } },
+    },
+  });
+
+  // Drawdown vs final bankroll
+  new Chart(document.getElementById('scatter'), {
+    type: 'scatter',
+    data: { datasets: [{
+      data: data.days.map((day) => ({ x: day.drawdown * 100, y: day.final, day: day.day, bust: day.bankrupt_at })),
+      pointRadius: 5, pointHoverRadius: 7, borderWidth: 1,
+      backgroundColor: data.days.map((day) => (day.bankrupt_at ? 'rgba(224,71,58,.75)' : 'rgba(201,162,77,.7)')),
+      borderColor: data.days.map((day) => (day.bankrupt_at ? CHIP : BRASS)),
+    }] },
+    options: {
+      scales: {
+        x: { min: 0, max: 100, title: { display: true, text: 'Max drawdown' }, ticks: { callback: (value) => `${value}%` } },
+        y: { beginAtZero: true, title: { display: true, text: 'Final bankroll' } },
+      },
+      plugins: { tooltip: { callbacks: {
+        title: (items) => `Day ${items[0].raw.day}${items[0].raw.bust ? ` · bankrupt at spin ${items[0].raw.bust}` : ''}`,
+        label: (item) => `drawdown ${item.parsed.x.toFixed(1)}% · closed at ${fmt(item.parsed.y)}`,
+      } } },
+    },
+  });
+})();
+</script>
+</body>
+</html>

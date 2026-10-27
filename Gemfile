@@ -2,12 +2,10 @@
 
 source 'https://rubygems.org'
 
-gem 'gnuplot'
-
-gem 'matrix'
-
 gem 'logger'
 
 group :test, :development do
+  gem 'minitest'
+  gem 'rake'
   gem 'rubocop'
 end
